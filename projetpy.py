@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 
@@ -135,20 +136,30 @@ def nomr_and_plot(data_nasdaq):
 
 
 def ml_short(data_nasdaq):
-    X = data_nasdaq.iloc[2:]  
+    X = data_nasdaq 
     y = data_nasdaq['next_year_coffee_avg'] 
 
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    scaler = StandardScaler()
+    '''scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train.drop('date', axis=1))
+    X_test_scaled = scaler.transform(X_test.drop('date', axis=1))'''
+
+    '''scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
     model = LinearRegression()
     model.fit(X_train_scaled, y_train)
-    y_pred = model.predict(X_test_scaled)
+    y_pred = model.predict(X_test_scaled)'''
+    '''model = LinearRegression()
+    model.fit(X_train_scaled, y_train)
+    y_pred = model.predict(X_test_scaled)'''
 
+    model = LinearRegression()
+    model.fit(X_train.drop('date', axis=1), y_train)
+    y_pred = model.predict(X_test.drop('date', axis=1))
 
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
@@ -157,8 +168,8 @@ def ml_short(data_nasdaq):
     print(f"R² Score: {r2}")
 
     plt.figure(figsize=(10, 6))
-    plt.plot(y_test.index, y_test, label='Valeurs réelles', color='blue')
-    plt.plot(y_test.index, y_pred, label='Valeurs prédites', color='red', linestyle='--')
+    plt.plot(np.linspace(0, len(y_test)-1, len(y_test)), y_test, label='Valeurs réelles', color='blue')
+    plt.plot(np.linspace(0, len(y_test)-1, len(y_test)), y_pred, label='Valeurs prédites', color='red', linestyle='--')
     plt.xlabel('Date')
     plt.ylabel('Prix du café')
     plt.title('Prix du café - Réel vs Prédit')
