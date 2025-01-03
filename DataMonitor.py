@@ -24,6 +24,8 @@ class DataMonitor:
         'Collect data from .txt and shape date format'
         data_txt = pd.read_csv(path_txt)
         data_txt['date'] = pd.to_datetime(data_txt['date'], errors='coerce')
+        data_txt.rename(columns={' value': 'coffee_price'}, inplace=True)
+
 
         'Collect data from sql and merge on id'
         root_sql = sqlite3.connect(path_sql)
@@ -36,13 +38,15 @@ class DataMonitor:
         data_sql['date'] = pd.to_datetime(data_sql['date'], errors='coerce')
 
         'Merge all data'
-        data = pd.merge(data_sql, data_txt, on="date", how="left")
-        data.rename(columns={'value': 'dxy_value'}, inplace=True)
+        data = pd.merge(data_txt, data_sql, on="date", how="left")
 
-        self._data_prof = data
+        'Set coffee_price as first column'
+        #columns = ['coffee_price'] + [col for col in self.getDataProf().columns if col != 'coffee_price']
+
+        self.setDataProf(data)
     
 
-    def saveDataMainAs(self, filename):
+    def saveDataProfAs(self, filename):
         self._data_prof.to_csv(filename, index=False)
 
     def saveDataNasdaqAs(self, filename):
@@ -68,10 +72,12 @@ class DataMonitor:
         "TXG_RPCH", "NGDP_RPCH", "PPPEX", "TMG_RPCH", "PCPI"
     ]
         filtered_columns = ['date'] + [col for col in data_nasdaq.columns if any(col.endswith(term) for term in terms_to_keep)]
-        data_nasdaq = data_nasdaq[filtered_columns]  
+        data_nasdaq = data_nasdaq[filtered_columns]
+        data_nasdaq['date'] = pd.to_datetime(data_nasdaq['date'], errors='coerce')
+
 
         #data_nasdaq = data_nasdaq.drop(['CHN_NGDP_FY','CHN_NGDP_D','CHN_NGDP_RPCH',], axis=1)
-        data_nasdaq.to_csv('fetched_nasdaq.csv', index=False)
+        data_nasdaq.to_csv('data_nasdaq.csv', index=False)
 
         self._data_nasdaq = data_nasdaq
 
@@ -81,7 +87,7 @@ class DataMonitor:
 
     def fillData(self, variables, method):
         if variables == 'all':
-            self._data_all = self._data_all.ffill()
+            self._data_all = self._data_all.fillna(method=method, axis=0)
         else:
             self._data_all[variables] = self._data_all[variables].fillna(method=method)
     
@@ -93,9 +99,20 @@ class DataMonitor:
         # Appliquer le filtre
         self._data_all = self._data_all[self._data_all.index > pd.Timestamp(date)]
 
-    def tocsv(self):
-        self._data_all.to_csv("data_from_class.csv", index=False)
+    def tocsv(self,  filename):
+        self._data_all.to_csv(filename, index=True)
     
     def describe(self):
         print(self._data_all.describe())
-        
+    
+    def setDataAll(self, data):
+        self._data_all = data
+    
+    def getDataAll(self):
+        return self._data_all
+    
+    def setDataProf(self, data):
+        self._data_prof = data
+    
+    def getDataProf(self):
+        return self._data_prof

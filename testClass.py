@@ -1,21 +1,31 @@
 from DataMonitor import DataMonitor 
+from DataAnalyser import DataAnalyser
 
 dataMonitor = DataMonitor()
 
 #Already extracted
 '''dataMonitor.collectData('dxy.txt', 'escp_msf_exercise.sqlite')
-dataMonitor.saveDataMainAs('data_output.csv')'''
-dataMonitor.openData1('data_output.csv')
+dataMonitor.saveDataProfAs('data_prof.csv')'''
+dataMonitor.openData1('data_prof.csv')
 
 #Already extracted
 '''dataMonitor.collectDataFromNasdaq()
-dataMonitor.saveDataNasdaqAs('fetched_nasdaq.csv')'''
-dataMonitor.openData2('fetched_nasdaq.csv')
+dataMonitor.saveDataNasdaqAs('data_nasdaq.csv')'''
+dataMonitor.openData2('data_nasdaq.csv')
 
 dataMonitor.mergeAll()
 print(dataMonitor._data_all)
 dataMonitor.fillData('all', 'ffill')
-dataMonitor.filterAfterDate("2006-04-30")
-dataMonitor.describe()
-dataMonitor.tocsv()
 
+''' on enlève les lignes où y'a pas de donnees
+pour faire la matrice de correl et regression
+sans trous
+'''
+dataMonitor.setDataAll(dataMonitor.getDataAll().dropna())
+dataMonitor.describe()
+#dataMonitor.tocsv("data_all.csv")
+print(dataMonitor.getDataAll().columns)
+
+'''On commence l'analyse de donnees'''
+dataAnalyser = DataAnalyser(dataMonitor.getDataAll())
+print(dataAnalyser.getCorrelMatrix())
