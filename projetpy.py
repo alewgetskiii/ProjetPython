@@ -1,6 +1,4 @@
 import pandas as pd
-import sqlite3
-import nasdaqdatalink
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
@@ -11,66 +9,17 @@ from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import numpy as np
 
+from data_fetcher import DataFetcher
 
+def best_corr(data_nasdaq, data_local, n):
 
-
-dxy = pd.read_csv('dxy.txt', sep=",", parse_dates=["date"], skipinitialspace=True)
-dxy['date'] = pd.to_datetime(dxy['date'], errors='coerce')
-
-conn = sqlite3.connect('escp_msf_exercise.sqlite')
-
-data = pd.read_sql_query("SELECT * FROM data", conn)
-variables_reference = pd.read_sql_query("SELECT * FROM variables_reference", conn)
-
-conn.close()
-
-data = pd.merge(data, variables_reference, on="id_variable")
-data = data.pivot(index="date", columns="variable", values="value")
-data.reset_index(inplace=True)
-
-data['date'] = pd.to_datetime(data['date'], errors='coerce')
-data = pd.merge(data, dxy, on="date", how="left")
-
-data.rename(columns={'value': 'dxy_value'}, inplace=True)
-
-data.to_csv("data_output.csv", index=False)
-
-def fetch_and_filter():
-    #Fetch des data
-    nasdaqdatalink.ApiConfig.api_key = "6JGsdynvBPRj-yNcyJm3"
-    data_nasdaq = nasdaqdatalink.get_table("QDL/ODA", paginate=True)
-    data_nasdaq = data_nasdaq[data_nasdaq['indicator'].str.startswith(("USA", "CHN", "COL"))] 
-
-    #ajout de la date et choix de la période
-    data_nasdaq = data_nasdaq.pivot(index="date", columns="indicator", values="value")
-    data_nasdaq.reset_index(inplace=True)
-    data_nasdaq = data_nasdaq[(data_nasdaq['date'] >= "1990-01-01") & (data_nasdaq['date'] <= "2020-12-31")]
-
-    #Suppression des colones avec beaucoup de donné manquante
-    threshold = len(data_nasdaq) * 0.9
-    data_nasdaq = data_nasdaq.dropna(axis=1, thresh=threshold)
-
-    #Filtre de indicateur pertinant
-    terms_to_keep = [
-        "TXG_RPCH", "NGDP_FY", "NGDP_D", "NGDP_RPCH", "PPPEX", 
-        "TMG_RPCH", "PCPIPCH", "PCPIEPCH", "PCPI", "PCPIE", "NGAP_NPGDP"
-    ]
-    filtered_columns = ['date'] + [col for col in data_nasdaq.columns if any(col.endswith(term) for term in terms_to_keep)]
-    data_nasdaq = data_nasdaq[filtered_columns]  
-
-    data_nasdaq = data_nasdaq.drop(['CHN_NGDP_FY','CHN_NGDP_D','CHN_NGDP_RPCH'], axis=1)
-    data_nasdaq.to_csv('fetched_nasdaq.csv', index=False)
-    return data_nasdaq
-
-def best_corr(data_nasdaq, n):
-
-    #Formatage des dates
-    data['date'] = pd.to_datetime(data['date'])
+    data_local['date'] = pd.to_datetime(data_local['date'])
     data_nasdaq['date'] = pd.to_datetime(data_nasdaq['date'])
 
     #Ajout du prix annuel moyen Shifter de -&
-    data['year'] = data['date'].dt.year
-    annual_coffee_avg = data.groupby('year')['coffee_nearby'].mean()
+    data_local['year'] = data_local['date'].dt.year
+    
+    annual_coffee_avg = data_local.groupby('year')['coffee_nearby'].mean()
     annual_coffee_avg_next = annual_coffee_avg.shift(-1)
     data_nasdaq['year'] = data_nasdaq['date'].dt.year
     data_nasdaq['next_year_coffee_avg'] = data_nasdaq['year'].map(annual_coffee_avg_next)
@@ -87,28 +36,8 @@ def best_corr(data_nasdaq, n):
 
     print("Les paramètres les plus corrélés avec le prix du café :")
     print(top_correlations)
-
-
+        
     return top_correlations.index.tolist()
-
-
-#fetched_data = fetch_and_filter()
-   
-
-
-data_nasdaq = pd.read_csv('fetched_nasdaq.csv')
-
-best_index = best_corr(data_nasdaq, 5)
-
-filtered_columns = ['date', 'next_year_coffee_avg'] + best_index 
-print(best_index)
-
-data_nasdaq = data_nasdaq[filtered_columns]
-data_nasdaq = data_nasdaq.drop(data_nasdaq.index[-1])
-data_nasdaq.to_csv("nasdaq_output.csv", index=False)
-
-
-
 
 
 def nomr_and_plot(data_nasdaq):
@@ -176,6 +105,38 @@ def ml_short(data_nasdaq):
     plt.legend()
     plt.grid(True)
     plt.show()
+
+
+from DataMonitor import DataMonitor 
+
+dataMonitor = DataMonitor()
+
+#Already extracted
+dataMonitor.collectData('dxy.txt', 'escp_msf_exercise.sqlite')
+#dataMonitor.saveDataMainAs('data_output.csv')'''
+#dataMonitor.openData1('data_output.csv')
+
+#Already extracted
+dataMonitor.collectDataFromNasdaq()
+#dataMonitor.saveDataNasdaqAs('fetched_nasdaq.csv')'''
+#dataMonitor.openData2('fetched_nasdaq.csv')
+
+dataMonitor.mergeAll()
+print(dataMonitor._data_all)
+dataMonitor.fillData('all', 'ffill')
+dataMonitor.filterAfterDate("2006-04-30")
+dataMonitor.describe()
+dataMonitor.tocsv()
+
+
+best_index = best_corr(dataMonitor._data_nasdaq, dataMonitor._data_prof, 5)
+
+filtered_columns = ['date', 'next_year_coffee_avg'] + best_index 
+print(best_index)
+
+data_nasdaq = dataMonitor._data_nasdaq[filtered_columns]
+data_nasdaq = data_nasdaq.drop(data_nasdaq.index[-1])
+data_nasdaq.to_csv("nasdaq_output.csv", index=False)
 
 ml_short(data_nasdaq)
 

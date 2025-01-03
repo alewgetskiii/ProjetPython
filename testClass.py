@@ -14,4 +14,8 @@ dataMonitor.openData2('fetched_nasdaq.csv')
 
 dataMonitor.mergeAll()
 print(dataMonitor._data_all)
-dataMonitor.fillData(['china_gdp_yoy_forecast', 'USA_PCPIPCH'], method='ffill')
+dataMonitor.fillData('all', 'ffill')
+dataMonitor.filterAfterDate("2006-04-30")
+dataMonitor.describe()
+dataMonitor.tocsv()
+

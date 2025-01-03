@@ -65,21 +65,37 @@ class DataMonitor:
 
         #Filtre de indicateur pertinant
         terms_to_keep = [
-            "TXG_RPCH", "NGDP_FY", "NGDP_D", "NGDP_RPCH", "PPPEX", 
-            "TMG_RPCH", "PCPIPCH", "PCPIEPCH", "PCPI", "PCPIE", "NGAP_NPGDP"
-        ]
+        "TXG_RPCH", "NGDP_RPCH", "PPPEX", "TMG_RPCH", "PCPI"
+    ]
         filtered_columns = ['date'] + [col for col in data_nasdaq.columns if any(col.endswith(term) for term in terms_to_keep)]
         data_nasdaq = data_nasdaq[filtered_columns]  
 
-        data_nasdaq = data_nasdaq.drop(['CHN_NGDP_FY','CHN_NGDP_D','CHN_NGDP_RPCH'], axis=1)
+        #data_nasdaq = data_nasdaq.drop(['CHN_NGDP_FY','CHN_NGDP_D','CHN_NGDP_RPCH',], axis=1)
         data_nasdaq.to_csv('fetched_nasdaq.csv', index=False)
 
         self._data_nasdaq = data_nasdaq
 
     def mergeAll(self):
         self._data_all = pd.merge(self._data_prof, self._data_nasdaq, on='date', how='left')
+        self._data_all = self._data_all.set_index('date')
 
     def fillData(self, variables, method):
-        'fill data for annualized data'
-        self._data_all[variables] = self._data_all[variables].fillna(method=method)
+        if variables == 'all':
+            self._data_all = self._data_all.ffill()
+        else:
+            self._data_all[variables] = self._data_all[variables].fillna(method=method)
+    
+    
+    def filterAfterDate(self, date):
+        if not isinstance(self._data_all.index, pd.DatetimeIndex):
+            self._data_all.index = pd.to_datetime(self._data_all.index)
+
+        # Appliquer le filtre
+        self._data_all = self._data_all[self._data_all.index > pd.Timestamp(date)]
+
+    def tocsv(self):
+        self._data_all.to_csv("data_from_class.csv", index=False)
+    
+    def describe(self):
+        print(self._data_all.describe())
         
