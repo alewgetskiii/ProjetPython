@@ -21,25 +21,25 @@ class DataAnalyser:
         ols_result = ols.fit()
         ols_result.summary()
         if with_constant:
-            var_beta = ols_result.bse[1]**2
-            var_intercept = ols_result.bse[0]**2
-            beta = ols_result.params[1]
+            #var_beta = ols_result.bse[1]**2
+            #var_intercept = ols_result.bse[0]**2
+            beta = ols_result.params[1:]
             intercept = ols_result.params[0]
-            return beta, intercept, var_beta, var_intercept
+            return beta, intercept
         else:
-            var_beta = ols_result.bse[0]**2
-            beta = ols_result.params[0]
-            return beta, var_beta
+            #var_beta = ols_result.bse[0]**2
+            beta = ols_result.params
+            return beta
     
-    def displayRegression(self, variables, hedge_ratios, intercepts, isDisplayed=False):
-        residuals = np.add(self.getLabelValue(),-1*np.add(intercepts, np.multiply(hedge_ratios, self.getData()[variables])))
+    def displayRegression(self, variables, hedge_ratios, intercept, isDisplayed=False):
+        residuals = np.add(self.getLabelValue(),-1*np.add(intercept, np.sum(np.multiply(np.array(hedge_ratios), np.array(self.getData()[variables])), axis=1)))
 
         if isDisplayed:
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
             ax = [i for i in range(len(residuals))]
-            ax1.plot(self._data.index , self.getLabelValue(), 'r--', label='Returns Test', color='black')
-            ax1.plot(ax, np.add(intercepts, np.multiply(hedge_ratios, self.getData()[variables])), color='purple', label='Prediction')
-            ax1.set_title('Return vs Prediction')
+            ax1.plot(self._data.index , self.getLabelValue(), 'r--', label='Coffee Price', color='black')
+            ax1.plot(ax, np.add(intercept, np.sum(np.multiply(np.array(hedge_ratios), np.array(self.getData()[variables])), axis=1)), color='purple', label='Prediction')
+            ax1.set_title('Actual vs Prediction')
             ax1.legend()
 
             ax2.plot(self._data.index, residuals, label='Residuals', color='blue')
