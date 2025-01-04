@@ -29,3 +29,7 @@ print(dataMonitor.getDataAll().columns)
 '''On commence l'analyse de donnees'''
 dataAnalyser = DataAnalyser(dataMonitor.getDataAll())
 print(dataAnalyser.getCorrelMatrix())
+best_coef = dataAnalyser.getBestCorrel(10)
+print(best_coef)
+beta, intercept, _, _ = dataAnalyser.linearRegCoef('china_gdp_yoy_forecast', with_constant=True)
+dataAnalyser.displayRegression('china_gdp_yoy_forecast', beta, intercept, True)
