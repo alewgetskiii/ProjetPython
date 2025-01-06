@@ -14,6 +14,7 @@ dataMonitor.saveDataNasdaqAs('data_nasdaq.csv')'''
 dataMonitor.openData2('data_nasdaq.csv')
 
 dataMonitor.mergeAll()
+
 print(dataMonitor._data_all)
 dataMonitor.fillData('all', 'ffill')
 
@@ -29,8 +30,13 @@ print(dataMonitor.getDataAll().columns)
 '''On commence l'analyse de donnees'''
 dataAnalyser = DataAnalyser(dataMonitor.getDataAll())
 print(dataAnalyser.getCorrelMatrix())
-best_coef = dataAnalyser.getBestCorrel(10)
-print(best_coef)
-variables = ['china_gdp_yoy_forecast', 'coffee_nearby']
-beta, intercept = dataAnalyser.linearRegCoef(variables, with_constant=True)
-dataAnalyser.displayRegression(variables, beta, intercept, True)
+best_features = dataAnalyser.getBestCorrel(10)
+print(best_features)
+#variables = ['china_gdp_yoy_forecast', 'coffee_nearby']
+#beta, intercept, r_squared_adj  = dataAnalyser.linearRegCoef(variables, with_constant=True, display=True)
+
+best_results = dataAnalyser.optimizerRegression(best_features, max_features=3, top_best=3)
+print(best_results)
+
+for res in best_results:
+    dataAnalyser.displayRegression(res[0].split(','), res[1][0], res[1][1])
