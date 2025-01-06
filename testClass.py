@@ -4,14 +4,14 @@ from DataAnalyser import DataAnalyser
 dataMonitor = DataMonitor()
 
 #Already extracted
-'''dataMonitor.collectData('dxy.txt', 'escp_msf_exercise.sqlite')
-dataMonitor.saveDataProfAs('data_prof.csv')'''
-dataMonitor.openData1('data_prof.csv')
+dataMonitor.collectDataProf('dxy.txt', 'escp_msf_exercise.sqlite')
+dataMonitor.saveDataProfAs('data_prof.csv')
+dataMonitor.openDataProf('data_prof.csv')
 
 #Already extracted
-'''dataMonitor.collectDataFromNasdaq()
-dataMonitor.saveDataNasdaqAs('data_nasdaq.csv')'''
-dataMonitor.openData2('data_nasdaq.csv')
+dataMonitor.collectDataFromNasdaq() 
+dataMonitor.saveDataNasdaqAs('data_nasdaq.csv')
+dataMonitor.openDataNasdaq('data_nasdaq.csv')
 
 dataMonitor.mergeAll()
 
