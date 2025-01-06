@@ -4,14 +4,18 @@ from DataAnalyser import DataAnalyser
 dataMonitor = DataMonitor()
 
 #if not already extracted and saved
-#dataMonitor.collectDataProf('dxy.txt', 'escp_msf_exercise.sqlite')
+dataMonitor.collectDataProf('dxy.txt', 'escp_msf_exercise.sqlite')
 dataMonitor.openDataProf('data_prof.csv')
 dataMonitor.openReturnProf('return_prof.csv')
 
 #if not already extracted and saved
-#dataMonitor.collectDataFromNasdaq()
+dataMonitor.collectDataFromNasdaq()
 dataMonitor.openDataNasdaq('data_nasdaq.csv')
 dataMonitor.openReturnNasdaq('return_nasdaq.csv')
+
+print(dataMonitor._return_nasdaq)
+print(dataMonitor._return_prof)
+
 
 
 dataMonitor.mergeData()

@@ -28,7 +28,7 @@ class DataMonitor:
         self._return_prof = pd.read_csv(file_to_open)
     
     def openReturnNasdaq(self, file_to_open):
-        self._data_nasdaq = pd.read_csv(file_to_open)
+        self._return_nasdaq = pd.read_csv(file_to_open)
 
     ''' Collect Data and Returns from prof's files '''
     def collectDataProf(self, path_txt, path_sql):
@@ -36,6 +36,15 @@ class DataMonitor:
         data_txt = pd.read_csv(path_txt)
         data_txt['date'] = pd.to_datetime(data_txt['date'], errors='coerce')
         data_txt.rename(columns={' value': 'coffee'}, inplace=True)
+
+         #Filtre les valeur abérantes du à des oublie de virgules
+        for col in data_txt.select_dtypes(include=['number']).columns:
+            if col in data_txt.columns:
+                mean = data_txt[col].mean()
+                std = data_txt[col].std()
+                outliers = data_txt[col] > (mean + 3 * std)
+            
+                data_txt.loc[outliers, col] = data_txt.loc[outliers, col] / 10
         self.addReturns(data_txt)
 
         'Collect data from sql and merge on id'
@@ -146,6 +155,8 @@ class DataMonitor:
         filtered_columns = ['date'] + [col for col in data_nasdaq.columns if any(col.endswith(term) for term in terms_to_keep)]
         data_nasdaq = data_nasdaq[filtered_columns]
         data_nasdaq['date'] = pd.to_datetime(data_nasdaq['date'], errors='coerce')
+
+        data_nasdaq = data_nasdaq.drop('USA_PPPEX', axis = 1)
 
         ''' dataframe of returns '''
         return_nasdaq = data_nasdaq.copy()
