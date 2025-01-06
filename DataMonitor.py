@@ -128,7 +128,7 @@ class DataMonitor:
         #Fetch des data
         nasdaqdatalink.ApiConfig.api_key = "6JGsdynvBPRj-yNcyJm3"
         data_nasdaq = nasdaqdatalink.get_table("QDL/ODA", paginate=True)
-        data_nasdaq = data_nasdaq[data_nasdaq['indicator'].str.startswith(("USA", "CHN", "COL"))] 
+        data_nasdaq = data_nasdaq[data_nasdaq['indicator'].str.startswith(("USA", "CHN", "BRA", "COL"))] 
 
         #ajout de la date et choix de la période
         data_nasdaq = data_nasdaq.pivot(index="date", columns="indicator", values="value")
@@ -209,6 +209,9 @@ class DataMonitor:
     
     def getDataAll(self):
         return self._data_all
+    
+    def getReturnAll(self):
+        return self._return_all
     
     def setDataProf(self, data):
         self._data_prof = data

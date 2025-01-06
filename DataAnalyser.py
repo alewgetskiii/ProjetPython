@@ -7,9 +7,11 @@ import pandas as pd
 class DataAnalyser:    
 
     _data = None
+    _returns = None
 
-    def __init__(self, data):
+    def __init__(self, data, returns):
         self.setData(data)
+        self.setReturns(returns)
 
     def getFrequency(self, col):
         ''' in days '''
@@ -125,3 +127,6 @@ class DataAnalyser:
     
     def setData(self, data):
         self._data = data
+
+    def setReturns(self, data):
+        self._returns = data

@@ -4,14 +4,14 @@ from DataAnalyser import DataAnalyser
 dataMonitor = DataMonitor()
 
 #if not already extracted and saved
-dataMonitor.collectDataProf('dxy.txt', 'escp_msf_exercise.sqlite')
-'''dataMonitor.openDataProf('data_prof.csv')
-dataMonitor.openReturnProf('return_prof.csv')'''
+#dataMonitor.collectDataProf('dxy.txt', 'escp_msf_exercise.sqlite')
+dataMonitor.openDataProf('data_prof.csv')
+dataMonitor.openReturnProf('return_prof.csv')
 
 #if not already extracted and saved
-dataMonitor.collectDataFromNasdaq()
-'''dataMonitor.openDataNasdaq('data_nasdaq.csv')
-dataMonitor.openReturnNasdaq('return_nasdaq.csv')'''
+#dataMonitor.collectDataFromNasdaq()
+dataMonitor.openDataNasdaq('data_nasdaq.csv')
+dataMonitor.openReturnNasdaq('return_nasdaq.csv')
 
 
 dataMonitor.mergeData()
@@ -20,10 +20,10 @@ print(dataMonitor._data_all)
 print(dataMonitor._return_all)
 
 
-'''dataAnalyser = DataAnalyser(dataMonitor.getDataAll())
+dataAnalyser = DataAnalyser(dataMonitor.getDataAll(), dataMonitor.getReturnAll())
 print(dataAnalyser.getCorrelMatrix())
 
-
+'''
 
 results_effect = {}
 for col in dataAnalyser.getData().columns[2:]:
