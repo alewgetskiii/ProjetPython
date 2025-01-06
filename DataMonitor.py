@@ -28,7 +28,7 @@ class DataMonitor:
         self._return_prof = pd.read_csv(file_to_open)
     
     def openReturnNasdaq(self, file_to_open):
-        self._data_nasdaq = pd.read_csv(file_to_open)
+        self._return_nasdaq = pd.read_csv(file_to_open)
 
     ''' Collect Data and Returns from prof's files '''
     def collectDataProf(self, path_txt, path_sql):
