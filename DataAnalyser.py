@@ -59,14 +59,11 @@ class DataAnalyser:
 
     def causal(self, variables, max_lag):
         results = {}
-        
-        
         for var in variables:
             price_coffee = [self._data['coffee'][date] for date in self.getDatesData(var[2:])]
             return_coffee = np.array([(price_coffee[i+1]/price_coffee[i])-1 for i in range(len(price_coffee)-1)])
             returns_var = np.array(self.getColReturns(var))
             data = pd.DataFrame({'y': return_coffee, 'x': returns_var})
-            
             try:
                 test_result = grangercausalitytests(data[['y', 'x']], max_lag, verbose=False)
                 p_values = [test_result[lag][0]['ssr_ftest'][1] for lag in range(1, max_lag + 1)]
@@ -77,9 +74,8 @@ class DataAnalyser:
                 results[var] = [None] * max_lag
 
         result_df = pd.DataFrame(results, index=[f'Lag {i}' for i in range(1, max_lag + 1)])
-        result_df = result_df.drop('r_BRA_PPPEX', axis = 1)
         filtered_result_df = result_df.loc[:, (result_df < 0.05).any(axis=0)]
-        return filtered_result_df
+        return result_df
     
     def getEffectsReturns(self, col, shift_max):
         dates = self.getDatesReturns(col)
@@ -263,19 +259,18 @@ class DataAnalyser:
     def getColValue(self, col):
         return self._data[self._data[col].notna()][col]
     
-    def coffe_annual_return(self):
+    def get_coffe_return(self, freq):
         data = self._data['coffee']
         data.index = pd.to_datetime(data.index)
-        data = data.resample('Y').last()  # Resample to yearly frequency
+        data = data.resample(freq).last()  # Resample to yearly frequency
         data = pd.DataFrame(data)
-        data['annual_return'] = pd.NA  # Initialize the 'annual return' column with missing values
+        name = freq + '_return'
+        data[name] = pd.NA  # Initialize the 'annual return' column with missing values
         print(type(data))
         for i in range(1, len(data)):
-            prev_year = data.index[i - 1]
-            current_year = data.index[i]
-            data.loc[current_year, 'annual_return'] = (data.loc[current_year, 'coffee'] / data.loc[prev_year, 'coffee']) - 1
-
-    
+            prev_p = data.index[i - 1]
+            current_p = data.index[i]
+            data.loc[current_p, name] = (data.loc[current_p, 'coffee'] / data.loc[prev_p, 'coffee']) - 1
         return data
 
 
