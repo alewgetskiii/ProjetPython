@@ -59,5 +59,9 @@ print(weekly_correl)
 daily_correl = dataAnalyser.getCorrelationByFrequency(daily_variables, 8)
 print(daily_correl)
 
+print('Meilleur causalite p<0.05 : ')
+print(dataAnalyser.causal(annual_variables, 5))
+
+
 '''for col in annual_variables:
     dataAnalyser.plotVariable(col)'''
