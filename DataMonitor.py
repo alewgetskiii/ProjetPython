@@ -137,7 +137,8 @@ class DataMonitor:
         #Fetch des data
         nasdaqdatalink.ApiConfig.api_key = "6JGsdynvBPRj-yNcyJm3"
         data_nasdaq = nasdaqdatalink.get_table("QDL/ODA", paginate=True)
-        data_nasdaq = data_nasdaq[data_nasdaq['indicator'].str.startswith(("USA", "CHN", "BRA", "COL"))] 
+        #EU doesn't work so we take France, Germany, Italia and Netherlands: main importeurs of coffee of EU
+        data_nasdaq = data_nasdaq[data_nasdaq['indicator'].str.startswith(("USA", "CHN", "BRA", "COL", "FRA", "DEU", "ITA", "NLD", "VNM", "JPN"))] 
 
         #ajout de la date et choix de la période
         data_nasdaq = data_nasdaq.pivot(index="date", columns="indicator", values="value")
@@ -156,7 +157,7 @@ class DataMonitor:
         data_nasdaq = data_nasdaq[filtered_columns]
         data_nasdaq['date'] = pd.to_datetime(data_nasdaq['date'], errors='coerce')
 
-        data_nasdaq = data_nasdaq.drop('USA_PPPEX', axis = 1)
+        data_nasdaq = data_nasdaq.drop('USA_PPPEX', axis = 1) #valeurs aberrantes
 
         ''' dataframe of returns '''
         return_nasdaq = data_nasdaq.copy()

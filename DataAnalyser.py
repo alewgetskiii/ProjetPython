@@ -24,6 +24,10 @@ class DataAnalyser:
     def getDatesData(self, col):
         return np.array(self._data[self._data[col].notna()].index)
     
+    def getDates(self, col):
+        data = self._data if col in self._data.columns else self._returns
+        return np.array(data[data[col].notna()].index)
+    
     def getDatesReturns(self, col):
         return np.array(self._returns[self._returns[col].notna()].index)
     
@@ -54,6 +58,15 @@ class DataAnalyser:
         return res
 
     
+    def plotVariable(self, col):
+        data = self.getValue(col)
+        fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
+        ax1.plot(data.index , data, label=col, color='blue')
+        ax1.set_title(col)
+        ax1.legend()
+        plt.tight_layout()
+        plt.show()
+
     def plotEffects(self, col):
         dates = self.getDates(col)
         pos_dates = [self._data.index.get_loc(date) for date in dates]
@@ -100,7 +113,8 @@ class DataAnalyser:
     def getBestCorrel(self, n):
         return self.getCorrelMatrix()['coffee'].drop('coffee').abs().sort_values(ascending=False).head(n).index.tolist()
     
-
+    def getCorrel(self, values1, values2):
+        return np.corrcoef(values1, values2)[0, 1]
 
     def linearRegCoef(self, variables, with_constant, display):
         data = self.getColValue(variables)
@@ -195,6 +209,10 @@ class DataAnalyser:
     
     def getColValue(self, col):
         return self._data[self._data[col].notna()][col]
+    
+    def getValue(self, col):
+        data = self._data if col in self._data.columns else self._returns
+        return data[data[col].notna()][col]
     
     def getColReturns(self, col):
             return self._returns[self._returns[col].notna()][col]
