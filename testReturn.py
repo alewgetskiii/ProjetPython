@@ -6,14 +6,14 @@ import numpy as np
 dataMonitor = DataMonitor()
 
 #if not already extracted and saved
-dataMonitor.collectDataProf('dxy.txt', 'escp_msf_exercise.sqlite')
-'''dataMonitor.openDataProf('data_prof.csv')
-dataMonitor.openReturnProf('return_prof.csv')'''
+#dataMonitor.collectDataProf('dxy.txt', 'escp_msf_exercise.sqlite')
+dataMonitor.openDataProf('data_prof.csv')
+dataMonitor.openReturnProf('return_prof.csv')
 
 #if not already extracted and saved
-dataMonitor.collectDataFromNasdaq()
-'''dataMonitor.openDataNasdaq('data_nasdaq.csv')
-dataMonitor.openReturnNasdaq('return_nasdaq.csv')'''
+#dataMonitor.collectDataFromNasdaq()
+dataMonitor.openDataNasdaq('data_nasdaq.csv')
+dataMonitor.openReturnNasdaq('return_nasdaq.csv')
 
 print(dataMonitor._return_nasdaq)
 print(dataMonitor._return_prof)
@@ -49,6 +49,15 @@ for col in annual_variables:
     annual_return_coffee = np.array([(annual_price_coffee[i+1]/annual_price_coffee[i])-1 for i in range(len(annual_price_coffee)-1)])
     annual_returns_col = np.array(dataAnalyser.getColReturns(col))
     print('correlation : ' +col + ' : '+str(dataAnalyser.getCorrel(annual_return_coffee, annual_returns_col)))
+
+annual_correl = dataAnalyser.getCorrelationByFrequency(annual_variables, 8)
+print(annual_correl)
+monthly_correl = dataAnalyser.getCorrelationByFrequency(monthly_variables, 8)
+print(monthly_correl)
+weekly_correl = dataAnalyser.getCorrelationByFrequency(weekly_variables, 8)
+print(weekly_correl)
+daily_correl = dataAnalyser.getCorrelationByFrequency(daily_variables, 8)
+print(daily_correl)
 
 '''for col in annual_variables:
     dataAnalyser.plotVariable(col)'''
