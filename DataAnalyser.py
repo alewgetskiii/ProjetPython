@@ -59,24 +59,16 @@ class DataAnalyser:
 
     def causal(self, variables, max_lag):
         results = {}
-        df = self._returns
-        df.index = pd.to_datetime(df.index)
-        cofee_annual_r = self.coffe_annual_return()['annual_return']
-
-        df_annual = df[variables].resample('Y').last()
-        data = pd.concat([df_annual, cofee_annual_r], axis=1)
-
-        data = data.drop('r_BRA_PPPEX', axis = 1)
-        data = data.drop(data.index[0], axis = 0)
-        data = data.ffill()
-
-        data.to_csv('data_causal.csv')
+        
         
         for var in variables:
-            if var == 'annual_return':
-                continue
+            price_coffee = [self._data['coffee'][date] for date in self.getDatesData(var[2:])]
+            return_coffee = np.array([(price_coffee[i+1]/price_coffee[i])-1 for i in range(len(price_coffee)-1)])
+            returns_var = np.array(self.getColReturns(var))
+            data = pd.DataFrame({'y': return_coffee, 'x': returns_var})
+            
             try:
-                test_result = grangercausalitytests(data[['annual_return', var]], max_lag, verbose=False)
+                test_result = grangercausalitytests(data[['y', 'x']], max_lag, verbose=False)
                 p_values = [test_result[lag][0]['ssr_ftest'][1] for lag in range(1, max_lag + 1)]
                 results[var] = p_values
         
