@@ -53,11 +53,11 @@ for col in annual_variables:
 annual_correl = dataAnalyser.getCorrelationByFrequency(annual_variables, range_lag=2, top_best=10)
 print(annual_correl)
 monthly_correl = dataAnalyser.getCorrelationByFrequency(monthly_variables, range_lag=2, top_best=10)
-print(monthly_correl)
+#print(monthly_correl)
 weekly_correl = dataAnalyser.getCorrelationByFrequency(weekly_variables, range_lag=2, top_best=10)
-print(weekly_correl)
+#print(weekly_correl)
 daily_correl = dataAnalyser.getCorrelationByFrequency(daily_variables, range_lag=2, top_best=10)
-print(daily_correl)
+#print(daily_correl)
 
 
 for varAndLag, _ in annual_correl.items():
