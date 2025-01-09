@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import combinations
 import pandas as pd
+from statsmodels.tsa.stattools import grangercausalitytests
+import os
 
 class DataAnalyser:    
 
@@ -54,6 +56,38 @@ class DataAnalyser:
             returns_coffee = [np.array(self._data['r_coffee'])[pos+shift] for pos in pos_dates]
             res = [shift, np.corrcoef(returns_coffee, returns_col)[0, 1]] if abs(np.corrcoef(returns_coffee, returns_col)[0, 1])>abs(res[1]) else res
         return res
+
+    def causal(self, variables, max_lag):
+        results = {}
+        df = self._returns
+        df.index = pd.to_datetime(df.index)
+        cofee_annual_r = self.coffe_annual_return()['annual_return']
+
+        df_annual = df[variables].resample('Y').last()
+        data = pd.concat([df_annual, cofee_annual_r], axis=1)
+
+        data = data.drop('r_BRA_PPPEX', axis = 1)
+        data = data.drop(data.index[0], axis = 0)
+        data = data.ffill()
+
+        data.to_csv('data_causal.csv')
+        
+        for var in variables:
+            if var == 'annual_return':
+                continue
+            try:
+                test_result = grangercausalitytests(data[['annual_return', var]], max_lag, verbose=False)
+                p_values = [test_result[lag][0]['ssr_ftest'][1] for lag in range(1, max_lag + 1)]
+                results[var] = p_values
+        
+            except Exception as e:
+                print(f"Erreur avec la colonne {var}: {e}")
+                results[var] = [None] * max_lag
+
+        result_df = pd.DataFrame(results, index=[f'Lag {i}' for i in range(1, max_lag + 1)])
+        result_df = result_df.drop('r_BRA_PPPEX', axis = 1)
+        filtered_result_df = result_df.loc[:, (result_df < 0.05).any(axis=0)]
+        return filtered_result_df
     
     def getEffectsReturns(self, col, shift_max):
         dates = self.getDatesReturns(col)
@@ -236,6 +270,24 @@ class DataAnalyser:
     
     def getColValue(self, col):
         return self._data[self._data[col].notna()][col]
+    
+    def coffe_annual_return(self):
+        data = self._data['coffee']
+        data.index = pd.to_datetime(data.index)
+        data = data.resample('Y').last()  # Resample to yearly frequency
+        data = pd.DataFrame(data)
+        data['annual_return'] = pd.NA  # Initialize the 'annual return' column with missing values
+        print(type(data))
+        for i in range(1, len(data)):
+            prev_year = data.index[i - 1]
+            current_year = data.index[i]
+            data.loc[current_year, 'annual_return'] = (data.loc[current_year, 'coffee'] / data.loc[prev_year, 'coffee']) - 1
+
+    
+        return data
+
+
+
     
     def getValue(self, col):
         data = self._data if col in self._data.columns else self._returns
