@@ -31,15 +31,17 @@ class DataAnalyser:
     def getDatesReturns(self, col):
         return np.array(self._returns[self._returns[col].notna()].index)
     
-    def getCorrelationByFrequency(self, variables, top_best):
+    def getCorrelationByFrequency(self, variables, range_lag, top_best):
         correlations = {}
         for var in variables:
             price_coffee = [self._data['coffee'][date] for date in self.getDatesData(var[2:])]
             return_coffee = np.array([(price_coffee[i+1]/price_coffee[i])-1 for i in range(len(price_coffee)-1)])
             returns_var = np.array(self.getColReturns(var))
-            correlations[var] = self.getCorrel(return_coffee, returns_var)
-        return dict(list(dict(sorted(correlations.items(), key=lambda item: abs(item[1]), reverse=True)).items())[:min(top_best, len(variables))])
+            for lag in range (range_lag+1):
+                correlations[var+' lag '+str(lag)] = self.getCorrel(return_coffee, returns_var, lag)
+        return dict(list(dict(sorted(correlations.items(), key=lambda item: abs(item[1]), reverse=True)).items())[:min(top_best, len(variables)*range_lag+1)])
     
+
     def getEffects(self, col, shift_max):
         dates = self.getDates(col)
         pos_dates = [self._data.index.get_loc(date) for date in dates]
@@ -122,8 +124,11 @@ class DataAnalyser:
     def getBestCorrel(self, n):
         return self.getCorrelMatrix()['coffee'].drop('coffee').abs().sort_values(ascending=False).head(n).index.tolist()
     
-    def getCorrel(self, values1, values2):
-        return np.corrcoef(values1, values2)[0, 1]
+    def getCorrel(self, values1, values2, lag):
+        if lag > 0:
+            return np.corrcoef(values1[lag:], values2[:-lag])[0, 1]
+        else:
+            return np.corrcoef(values1, values2)[0, 1]
 
     def linearRegCoef(self, variables, with_constant, display):
         data = self.getColValue(variables)
@@ -163,6 +168,19 @@ class DataAnalyser:
         plt.tight_layout()
         plt.show()
         
+    def linearRegByFrequency(self, variable, lag):
+        price_coffee = [self._data['coffee'][date] for date in self.getDatesData(variable[2:])]
+        return_coffee = np.array([(price_coffee[i+1]/price_coffee[i])-1 for i in range(len(price_coffee)-1)])
+        returns_var = np.array(self.getColReturns(variable))
+        if lag>0:
+            return_coffee, returns_var = return_coffee[lag:], returns_var[:-lag]
+        x = sm.add_constant(returns_var)
+        ols = sm.OLS(return_coffee, x)
+        ols_result = ols.fit()
+        beta = list(ols_result.params)[1:]
+        intercept = ols_result.params[0]
+        return beta, intercept, ols_result.rsquared_adj
+
     def linearRegCoefReturns(self, variables, with_constant, display):
         data = self.getColReturns(variables).shift(-1)
         data['r_coffee'] = self._returns['r_coffee']

@@ -48,16 +48,23 @@ for col in annual_variables:
     annual_price_coffee = [dataAnalyser._data['coffee'][date] for date in dataAnalyser.getDatesData(col[2:])]
     annual_return_coffee = np.array([(annual_price_coffee[i+1]/annual_price_coffee[i])-1 for i in range(len(annual_price_coffee)-1)])
     annual_returns_col = np.array(dataAnalyser.getColReturns(col))
-    print('correlation : ' +col + ' : '+str(dataAnalyser.getCorrel(annual_return_coffee, annual_returns_col)))
+    print('correlation : ' +col + ' : '+str(dataAnalyser.getCorrel(annual_return_coffee, annual_returns_col, lag=0)))
 
-annual_correl = dataAnalyser.getCorrelationByFrequency(annual_variables, 8)
+annual_correl = dataAnalyser.getCorrelationByFrequency(annual_variables, range_lag=2, top_best=10)
 print(annual_correl)
-monthly_correl = dataAnalyser.getCorrelationByFrequency(monthly_variables, 8)
+monthly_correl = dataAnalyser.getCorrelationByFrequency(monthly_variables, range_lag=2, top_best=10)
 print(monthly_correl)
-weekly_correl = dataAnalyser.getCorrelationByFrequency(weekly_variables, 8)
+weekly_correl = dataAnalyser.getCorrelationByFrequency(weekly_variables, range_lag=2, top_best=10)
 print(weekly_correl)
-daily_correl = dataAnalyser.getCorrelationByFrequency(daily_variables, 8)
+daily_correl = dataAnalyser.getCorrelationByFrequency(daily_variables, range_lag=2, top_best=10)
 print(daily_correl)
 
+
+''' reg simple '''
+for varAndLag, corr in annual_correl.items():
+    beta, intercept, score_adj = dataAnalyser.linearRegByFrequency(varAndLag[:-6], int(varAndLag[-1]))
+    print(varAndLag + ' : ' + str(score_adj))
+
+''' reg multiple '''
 '''for col in annual_variables:
     dataAnalyser.plotVariable(col)'''
