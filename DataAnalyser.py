@@ -213,7 +213,7 @@ class DataAnalyser:
         ols_result = ols.fit()
         beta = list(ols_result.params)[1:]
         intercept = ols_result.params[0]
-        return beta, intercept, ols_result.rsquared_adj
+        return beta, intercept, ols_result.rsquared ,ols_result.rsquared_adj
 
     def linearRegCoefReturns(self, variables, with_constant, display):
         data = self.getColReturns(variables).shift(-1)

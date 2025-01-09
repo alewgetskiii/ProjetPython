@@ -59,6 +59,11 @@ print(weekly_correl)
 daily_correl = dataAnalyser.getCorrelationByFrequency(daily_variables, range_lag=2, top_best=10)
 print(daily_correl)
 
+
+for varAndLag, _ in annual_correl.items():
+    beta, intercept, score, score_adj = dataAnalyser.linearRegByFrequency(varAndLag[:-6], int(varAndLag[-1]))
+    print(score)
+
 print('Meilleur causalite p<0.05 : ')
 print(dataAnalyser.causal(annual_variables, 5))
 
