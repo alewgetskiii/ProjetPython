@@ -35,32 +35,27 @@ class DataAnalyser:
     def getDatesReturns(self, col):
         return np.array(self._returns[self._returns[col].notna()].index)
     
-    def getCorrelationByFrequency(self, variables, range_lag, top_best):
+    def getCorrelationByFrequency(self, variables, range_lag, top_best, split_date):
         correlations = {}
         for var in variables:
-            price_coffee = [self._data['coffee'][date] for date in self.getDatesData(var[2:])]
-            return_coffee = np.array([(price_coffee[i+1]/price_coffee[i])-1 for i in range(len(price_coffee)-1)])
-            returns_var = np.array(self.getColReturns(var))
+            returns_var = self.getColReturns(var)[self.getColReturns(var).index >= '1991-12-31']
+            returns_var = returns_var[returns_var.index <= split_date]
             for lag in range (range_lag+1):
-                correlations[var+' lag '+str(lag)] = self.getCorrel(return_coffee, returns_var, lag)
+                correlations[var+' lag '+str(lag)] = self.getCorrel(self.getAnnualCoffeeReturn()[:len(returns_var)], returns_var, lag)
         return dict(list(dict(sorted(correlations.items(), key=lambda item: abs(item[1]), reverse=True)).items())[:min(top_best, len(variables)*range_lag+1)])
     
     def linearRegWithLagsByFrequency(self, variables, lags, split_year, displayPred):
         max_lag = max(lags)
-        ''' all variables with same frequency have same dates !'''
-        price_coffee = self._data['coffee'][self._data[variables[0][2:]].notna()]
-        return_coffee = (price_coffee/price_coffee.shift(1))-1
-        return_coffee = return_coffee.dropna()
         x = []
         for i in range(len(variables)):
             if lags[i] == 0:
-                x.append(list(self.getColReturns(variables[i])[max_lag-lags[i]:]))
+                x.append(list(self.getColReturns(variables[i])[self.getColReturns(variables[i]).index >= '1991-12-31'][max_lag-lags[i]:]))
             else:
-                x.append(list(self.getColReturns(variables[i])[max_lag-lags[i]:-lags[i]]))
+                x.append(list(self.getColReturns(variables[i])[self.getColReturns(variables[i]).index >= '1991-12-31'][max_lag-lags[i]:-lags[i]]))
         x = list(zip(*x))
         x = np.array([list(obs) for obs in x])
 
-        return_coffee = return_coffee[max_lag:]
+        return_coffee = self.getAnnualCoffeeReturn()[max_lag:]
         X = sm.add_constant(x)
 
         'Split train and test'
@@ -73,15 +68,14 @@ class DataAnalyser:
         intercept = ols_result.params[0]
 
         if displayPred:
-            self.plotPrediction(y_test, y_pred, variables, lags)
+            self.plotPrediction(y_test, y_pred)
         
         return beta, intercept, ols_result.rsquared ,ols_result.rsquared_adj
 
-    def plotPrediction(self, y, y_pred, variables, lags):
-        labels = [variables[i] + ': (-'+str(lags[i])+')' for i in range(len(variables))]
+    def plotPrediction(self, y, y_pred):
         fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
         ax1.plot(y.index , y, label='Coffee returns', color='blue')
-        ax1.plot(y.index , y_pred, label='Prediction '+str(labels), color='green')
+        ax1.plot(y.index , y_pred, label='Prediction', color='green')
         ax1.set_title('Coffee Return vs Prediction')
         ax1.legend()
         plt.show()
@@ -99,41 +93,49 @@ class DataAnalyser:
             res = [shift, np.corrcoef(returns_coffee, returns_col)[0, 1]] if abs(np.corrcoef(returns_coffee, returns_col)[0, 1])>abs(res[1]) else res
         return res
 
-    def causal(self, variables, max_lag, limit):
+    def causal(self, variables, max_lag, p_value_limit):
         results = []
+        lag_matrix = {var: [None] * max_lag for var in variables}  # Dictionnaire pour stocker les p-values par lag
+
+        ''' on teste la causalite des autres variables sur les returns du coffee'''
         for var in variables:
-            price_coffee = [self._data['coffee'][date] for date in self.getDatesData(var[2:])]
-            return_coffee = np.array([(price_coffee[i+1]/price_coffee[i])-1 for i in range(len(price_coffee)-1)])
-            returns_var = np.array(self.getColReturns(var))
-            data = pd.DataFrame({'y': return_coffee, 'x': returns_var})
+            returns_var = np.array(self.getColReturns(var)[self.getColReturns(var).index >= '1991-12-31'])
+            data = pd.DataFrame({'y': self.getAnnualCoffeeReturn()[:len(returns_var)], 'x': returns_var})
             try:
                 test_result = grangercausalitytests(data[['y', 'x']], max_lag, verbose=False)
                 p_values = [test_result[lag][0]['ssr_ftest'][1] for lag in range(1, max_lag + 1)]
             
                 # Filtrage des p-values inférieures à la limite
-                valid_p_values = [(var, lag, p_value) for lag, p_value in enumerate(p_values, start=1) if p_value < limit]
-            
+                valid_p_values = [(var, lag, p_value) for lag, p_value in enumerate(p_values, start=1) if p_value < p_value_limit]
+                for lag, p_value in enumerate(p_values, start=1):
+                    lag_matrix[var][lag-1] = p_value
+
                 if valid_p_values:
                     # Ajouter les p-values valides dans la liste des résultats
                     results.extend(valid_p_values)
         
             except Exception as e:
                 print(f"Erreur avec la colonne {var}: {e}")
-    
-        # Trier les résultats par p_value (croissant)
+        
+        '''Trier les résultats par p_value (croissant)'''
         sorted_results = sorted(results, key=lambda x: x[2])
         seen_first_values = set()
 
-        # Parcours des triplets
+        '''Parcours des triplets'''
         unique_results = []
         for triplet in sorted_results:
             first_value = triplet[0]
             if first_value not in seen_first_values:
                 unique_results.append(triplet)
                 seen_first_values.add(first_value)
-    
-        # Retourner uniquement les 5 meilleures p-values
-        return unique_results[:5]
+
+        # Convertir le dictionnaire en DataFrame
+        lag_df = pd.DataFrame(lag_matrix)
+        # Afficher la matrice des p-values pour chaque variable et lag
+        print("Matrice filtree des p-values pour chaque variable et lag :")
+        print(lag_df)
+
+        return unique_results
 
     def RandomForest(self, X_daily, X_annual):
         valid_columns = [col for col in X_daily + X_annual if col in self._returns.columns]
@@ -199,7 +201,11 @@ class DataAnalyser:
         plt.tight_layout()
         plt.show()
 
-    
+    def getAnnualCoffeeReturn(self):
+        df = self._data['coffee']
+        df.index = pd.to_datetime(df.index)
+        df = pd.DataFrame(df.resample('Y').last())
+        return df.pct_change().dropna()['coffee']
 
     
 
@@ -308,7 +314,7 @@ class DataAnalyser:
 
     def setReturns(self, data):
         self._returns = data
-    
+
     def split_year(self, X, y, year):
         cutoff_date = year+"-12-31"
         ''' y is df with date as index whereas X is array'''

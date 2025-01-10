@@ -72,7 +72,7 @@ class DataMonitor:
                 mean = data_prof[col].mean()
                 std = data_prof[col].std()
                 outliers_plus = data_prof[col] > (mean + 3 * std)
-                outliers_less = data_prof[col] > (mean - 3 * std)
+                outliers_less = data_prof[col] < (mean - 3 * std)
                 data_prof.loc[outliers_plus, col] = data_prof.loc[outliers_plus, col] / 10
                 data_prof.loc[outliers_less, col] = data_prof.loc[outliers_less, col] * 10
         data_prof.to_csv('data_prof.csv', index=False)
@@ -100,7 +100,7 @@ class DataMonitor:
 
         #Filtre de indicateur pertinant
         terms_to_keep = [
-        "TXG_RPCH", "NGDP_RPCH", "PPPEX", "TMG_RPCH", "PCPI"
+        "TXG_RPCH", "NGDP_RPCH", "PPPEX", "TMG_RPCH", "PCPI", "NID_NGDP", "NGSD_NGDP"
     ]
         filtered_columns = ['date'] + [col for col in data_nasdaq.columns if any(col.endswith(term) for term in terms_to_keep)]
         data_nasdaq = data_nasdaq[filtered_columns]
@@ -125,7 +125,10 @@ class DataMonitor:
     def addReturns(self, df):
         for col in df.columns:
             if col != 'date':
-                df['r_'+col] = (df[col]/df[col].shift(1))-1
+                if col[-3:] == 'PCH': #déjà en % annuels
+                    df['r_'+col] = df[col]
+                else:
+                    df['r_'+col] = (df[col]/df[col].shift(1))-1
     
     def computeReturns(self, col_df):
         return np.array((col_df/col_df.shift(1))-1)
