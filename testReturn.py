@@ -76,7 +76,7 @@ for col, lag, p_value in best_causal:
     columns_list.append(col)
     lags_list.append(lag)
 #lags = [int(causalities[col].idxmin()[-1]) for col in causalities.columns]
-beta, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(columns_list, lags_list)
+beta, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=columns_list, lags=lags_list, split_year='2012', displayPred=True)
 print(score)
 
 #dataAnalyser.RandomForest(columns_list, daily_variables)
@@ -95,7 +95,7 @@ for variables in variables_by_freq:
     for col, lag, p_value in best_causal:
         columns_list.append(col)
         lags_list.append(lag)
-    betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(columns_list, lags_list)
+    betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=columns_list, lags=lags_list, split_year='2012', displayPred=True)
     betas_by_freq.append(betas)
     intercept_by_freq.append(intercept)
     optimal_lags_by_freq.append(lags_list)
