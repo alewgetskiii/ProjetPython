@@ -36,15 +36,6 @@ class DataMonitor:
         data_txt = pd.read_csv(path_txt)
         data_txt['date'] = pd.to_datetime(data_txt['date'], errors='coerce')
         data_txt.rename(columns={' value': 'coffee'}, inplace=True)
-
-         #Filtre les valeur abérantes du à des oublie de virgules
-        for col in data_txt.select_dtypes(include=['number']).columns:
-            if col in data_txt.columns:
-                mean = data_txt[col].mean()
-                std = data_txt[col].std()
-                outliers = data_txt[col] > (mean + 3 * std)
-            
-                data_txt.loc[outliers, col] = data_txt.loc[outliers, col] / 10
         self.addReturns(data_txt)
 
         'Collect data from sql and merge on id'
@@ -75,7 +66,14 @@ class DataMonitor:
         data_prof.sort_values(by='date', ascending=True, inplace=True)
         return_prof = pd.merge(data_txt.drop(columns=['coffee'], inplace=False), return_sql, on="date", how="outer")
         return_prof.sort_values(by='date', ascending=True, inplace=True)
-
+        for col in data_prof.select_dtypes(include=['number']).columns:
+            if col in data_prof.columns:
+                mean = data_prof[col].mean()
+                std = data_prof[col].std()
+                outliers_plus = data_prof[col] > (mean + 3 * std)
+                outliers_less = data_prof[col] > (mean - 3 * std)
+                data_prof.loc[outliers_plus, col] = data_prof.loc[outliers_plus, col] / 10
+                data_prof.loc[outliers_less, col] = data_prof.loc[outliers_less, col] * 10
         data_prof.to_csv('data_prof.csv', index=False)
         return_prof.to_csv('return_prof.csv', index=False)
 
