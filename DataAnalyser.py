@@ -49,7 +49,7 @@ class DataAnalyser:
                 correlations[var+' lag '+str(lag)] = self.getCorrel(return_coffee, returns_var, lag)
         return dict(list(dict(sorted(correlations.items(), key=lambda item: abs(item[1]), reverse=True)).items())[:min(top_best, len(variables)*range_lag+1)])
     
-    def linearRegWithLagsByFrequency(self, variables, lags):
+    def linearRegWithLagsByFrequency(self, variables, lags, split_year, displayPred):
         max_lag = max(lags)
         ''' all variables with same frequency have same dates !'''
         price_coffee = self._data['coffee'][self._data[variables[0][2:]].notna()]
@@ -68,16 +68,28 @@ class DataAnalyser:
         X = sm.add_constant(x)
 
         'Split train and test'
-        X_train, X_test, y_train, y_test = self.split_year(X, return_coffee, year='2012')
+        X_train, X_test, y_train, y_test = self.split_year(X, return_coffee, year=split_year)
 
         ols = sm.OLS(y_train, X_train)
-
         ols_result = ols.fit()
+        y_pred = ols_result.predict(X_test)
         beta = list(ols_result.params)[1:]
         intercept = ols_result.params[0]
+
+        if displayPred:
+            self.plotPrediction(y_test, y_pred, variables, lags)
         
         return beta, intercept, ols_result.rsquared ,ols_result.rsquared_adj
 
+    def plotPrediction(self, y, y_pred, variables, lags):
+        labels = [variables[i] + ': (-'+str(lags[i])+')' for i in range(len(variables))]
+        fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
+        ax1.plot(y.index , y, label='Coffee returns', color='blue')
+        ax1.plot(y.index , y_pred, label='Prediction '+str(labels), color='green')
+        ax1.set_title('Coffee Return vs Prediction')
+        ax1.legend()
+        plt.tight_layout()
+        plt.show()
 
     def getEffects(self, col, shift_max):
         dates = self.getDates(col)
