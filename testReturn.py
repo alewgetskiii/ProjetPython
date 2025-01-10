@@ -65,7 +65,7 @@ for varAndLag, _ in annual_correl.items():
     print(score)
 
 print('Meilleur causalite p<0.05 : ')
-causalities = dataAnalyser.causal(annual_variables, 5, 0.10)
+causalities = dataAnalyser.causal(annual_variables, 5, 0.1)
 print(causalities)
 
 
@@ -73,3 +73,5 @@ print(causalities)
 lags = [int(causalities[col].idxmin()[-1]) for col in causalities.columns]
 beta, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(causalities.columns, lags)
 print(score)
+
+dataAnalyser.RandomForest(annual_variables, daily_variables)

@@ -1,3 +1,5 @@
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -66,6 +68,8 @@ class DataAnalyser:
         ols_result = ols.fit()
         beta = list(ols_result.params)[1:]
         intercept = ols_result.params[0]
+
+        
         return beta, intercept, ols_result.rsquared ,ols_result.rsquared_adj
 
 
@@ -101,6 +105,20 @@ class DataAnalyser:
         result_df = pd.DataFrame(results, index=[f'Lag {i}' for i in range(1, max_lag + 1)])
         filtered_result_df = result_df.loc[:, (result_df < limit).any(axis=0)]
         return filtered_result_df
+
+    def RandomForest(self, X_daily, X_annual):
+        X_combined = np.column_stack((X_daily, X_annual))
+        y = self._returns['r_coffee']
+
+        # Divisez les données en ensembles d'entraînement et de test
+        X_train, X_test, y_train, y_test = train_test_split(X_combined, y, test_size=0.2, random_state=42)
+
+        # Modèle de forêt aléatoire
+        model = RandomForestRegressor(n_estimators=100, random_state=42)
+        result = model.fit(X_train, y_train)
+        # Prédictions
+        y_pred = model.predict(X_test) 
+        print(result.rsquared)
     
     def getEffectsReturns(self, col, shift_max):
         dates = self.getDatesReturns(col)
