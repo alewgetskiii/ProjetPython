@@ -341,11 +341,11 @@ class DataAnalyser:
     def setReturns(self, data):
         self._returns = data
     
-    def split_year(X, Y, year):
-        cutoff_date = pd.Timestamp(f"{year}-01-01")
-        X_train = X[X.index < cutoff_date]
-        X_test = X[X.index >= cutoff_date]
-        Y_train = Y[Y.index < cutoff_date]
-        Y_test = Y[Y.index >= cutoff_date]
+    def split_year(X, y, year):
+        cutoff_date = pd.Timestamp(f"{year}-12-31")
+        X_train = X[X.index <= cutoff_date]
+        X_test = X[X.index > cutoff_date]
+        y_train = y[y.index <= cutoff_date]
+        y_test = y[y.index > cutoff_date]
     
-        return X_train, X_test, Y_train, Y_test
+        return X_train, X_test, y_train, y_test
