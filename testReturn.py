@@ -65,7 +65,7 @@ for varAndLag, _ in annual_correl.items():
     print(score)
 
 print('Meilleur causalite p<0.05 : ')
-causalities = dataAnalyser.causal(annual_variables, 5)
+causalities = dataAnalyser.causal(annual_variables, 5, 0.10)
 print(causalities)
 
 

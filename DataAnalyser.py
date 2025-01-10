@@ -4,7 +4,9 @@ import numpy as np
 from itertools import combinations
 import pandas as pd
 from statsmodels.tsa.stattools import grangercausalitytests
-import os
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 class DataAnalyser:    
 
@@ -80,7 +82,7 @@ class DataAnalyser:
             res = [shift, np.corrcoef(returns_coffee, returns_col)[0, 1]] if abs(np.corrcoef(returns_coffee, returns_col)[0, 1])>abs(res[1]) else res
         return res
 
-    def causal(self, variables, max_lag):
+    def causal(self, variables, max_lag, limit):
         results = {}
         for var in variables:
             price_coffee = [self._data['coffee'][date] for date in self.getDatesData(var[2:])]
@@ -97,8 +99,8 @@ class DataAnalyser:
                 results[var] = [None] * max_lag
 
         result_df = pd.DataFrame(results, index=[f'Lag {i}' for i in range(1, max_lag + 1)])
-        filtered_result_df = result_df.loc[:, (result_df < 0.05).any(axis=0)]
-        return result_df
+        filtered_result_df = result_df.loc[:, (result_df < limit).any(axis=0)]
+        return filtered_result_df
     
     def getEffectsReturns(self, col, shift_max):
         dates = self.getDatesReturns(col)
