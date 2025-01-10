@@ -52,8 +52,9 @@ class DataAnalyser:
     def linearRegWithLagsByFrequency(self, variables, lags):
         max_lag = max(lags)
         ''' all variables with same frequency have same dates !'''
-        price_coffee = [self._data['coffee'][date] for date in self.getDatesData(variables[0][2:])]
-        return_coffee = np.array([(price_coffee[i+1]/price_coffee[i])-1 for i in range(len(price_coffee)-1)])
+        price_coffee = self._data['coffee'][self._data[variables[0][2:]].notna()]
+        return_coffee = (price_coffee/price_coffee.shift(1))-1
+        return_coffee = return_coffee.dropna()
         x = []
         for i in range(len(variables)):
             if lags[i] == 0:
@@ -64,13 +65,16 @@ class DataAnalyser:
         x = np.array([list(obs) for obs in x])
 
         return_coffee = return_coffee[max_lag:]
-
         X = sm.add_constant(x)
-        ols = sm.OLS(return_coffee, X)
+
+        'Split train and test'
+        X_train, X_test, y_train, y_test = self.split_year(X, return_coffee, year='2012')
+
+        ols = sm.OLS(y_train, X_train)
+
         ols_result = ols.fit()
         beta = list(ols_result.params)[1:]
         intercept = ols_result.params[0]
-
         
         return beta, intercept, ols_result.rsquared ,ols_result.rsquared_adj
 
@@ -390,11 +394,12 @@ class DataAnalyser:
     def setReturns(self, data):
         self._returns = data
     
-    def split_year(X, Y, year):
-        cutoff_date = pd.Timestamp(f"{year}-01-01")
-        X_train = X[X.index < cutoff_date]
-        X_test = X[X.index >= cutoff_date]
-        Y_train = Y[Y.index < cutoff_date]
-        Y_test = Y[Y.index >= cutoff_date]
+    def split_year(self, X, y, year):
+        cutoff_date = year+"-12-31"
+        ''' y is df with date as index whereas X is array'''
+        y_train = y[y.index <= cutoff_date]
+        y_test = y[y.index > cutoff_date]
+        X_train = X[:len(y_train)]
+        X_test = X[len(y_train):]
     
-        return X_train, X_test, Y_train, Y_test
+        return X_train, X_test, y_train, y_test

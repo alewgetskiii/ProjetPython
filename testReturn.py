@@ -44,11 +44,11 @@ weekly_variables = [col for col in dataAnalyser._returns.columns[2:] if dataAnal
 daily_variables = [col for col in dataAnalyser._returns.columns[2:] if dataAnalyser.getFrequencyReturns(col)==1]
 
 
-for col in annual_variables:
+'''for col in annual_variables:
     annual_price_coffee = [dataAnalyser._data['coffee'][date] for date in dataAnalyser.getDatesData(col[2:])]
     annual_return_coffee = np.array([(annual_price_coffee[i+1]/annual_price_coffee[i])-1 for i in range(len(annual_price_coffee)-1)])
     annual_returns_col = np.array(dataAnalyser.getColReturns(col))
-    print('correlation : ' +col + ' : '+str(dataAnalyser.getCorrel(annual_return_coffee, annual_returns_col, lag=0)))
+    print('correlation : ' +col + ' : '+str(dataAnalyser.getCorrel(annual_return_coffee, annual_returns_col, lag=0)))'''
 
 annual_correl = dataAnalyser.getCorrelationByFrequency(annual_variables, range_lag=2, top_best=10)
 print(annual_correl)
@@ -79,4 +79,23 @@ for col, lag, p_value in best_causal:
 beta, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(columns_list, lags_list)
 print(score)
 
-dataAnalyser.RandomForest(columns_list, daily_variables)
+#dataAnalyser.RandomForest(columns_list, daily_variables)
+
+''' On fait une regression linéaire multiple sur chaque frequence SEPAREMMENT: annuelle, mensuelle, weekkly, daily
+puis on aggrege les modelisations sur une fréquence choisie '''
+variables_by_freq = [annual_variables,weekly_variables,daily_variables] 
+#montlhy have no enough impact -> lags vide, on enleve
+#weekly : 1 variable
+#daily : 2 variables
+betas_by_freq = []
+intercept_by_freq = []
+optimal_lags_by_freq = []
+for variables in variables_by_freq:
+    causalities = dataAnalyser.causal(variables, max_lag=5, limit=0.20)
+    for col, lag, p_value in best_causal:
+        columns_list.append(col)
+        lags_list.append(lag)
+    betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(columns_list, lags_list)
+    betas_by_freq.append(betas)
+    intercept_by_freq.append(intercept)
+    optimal_lags_by_freq.append(lags_list)
