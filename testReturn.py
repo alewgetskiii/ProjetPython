@@ -44,11 +44,11 @@ weekly_variables = [col for col in dataAnalyser._returns.columns[2:] if dataAnal
 daily_variables = [col for col in dataAnalyser._returns.columns[2:] if dataAnalyser.getFrequencyReturns(col)==1]
 
 
-for col in annual_variables:
+'''for col in annual_variables:
     annual_price_coffee = [dataAnalyser._data['coffee'][date] for date in dataAnalyser.getDatesData(col[2:])]
     annual_return_coffee = np.array([(annual_price_coffee[i+1]/annual_price_coffee[i])-1 for i in range(len(annual_price_coffee)-1)])
     annual_returns_col = np.array(dataAnalyser.getColReturns(col))
-    print('correlation : ' +col + ' : '+str(dataAnalyser.getCorrel(annual_return_coffee, annual_returns_col, lag=0)))
+    print('correlation : ' +col + ' : '+str(dataAnalyser.getCorrel(annual_return_coffee, annual_returns_col, lag=0)))'''
 
 annual_correl = dataAnalyser.getCorrelationByFrequency(annual_variables, range_lag=2, top_best=10)
 print(annual_correl)
@@ -70,8 +70,25 @@ print(causalities)
 
 
 ''' Regression multiple from result causalities'''
-lags = [int(causalities[col].idxmin()[-1]) for col in causalities.columns]
-beta, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(causalities.columns, lags)
+optimal_lags = [int(causalities[col].idxmin()[-1]) for col in causalities.columns]
+beta, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(causalities.columns, optimal_lags)
 print(score)
 
-dataAnalyser.RandomForest(annual_variables, daily_variables)
+#dataAnalyser.RandomForest(annual_variables, daily_variables)
+
+''' On fait une regression linéaire multiple sur chaque frequence SEPAREMMENT: annuelle, mensuelle, weekkly, daily
+puis on aggrege les modelisations sur une fréquence choisie '''
+variables_by_freq = [annual_variables,weekly_variables,daily_variables] 
+#montlhy have no enough impact -> lags vide, on enleve
+#weekly : 1 variable
+#daily : 2 variables
+betas_by_freq = []
+intercept_by_freq = []
+optimal_lags_by_freq = []
+for variables in variables_by_freq:
+    causalities = dataAnalyser.causal(variables, max_lag=5, filter_p_value=0.20)
+    optimal_lags = [int(causalities[col].idxmin()[-1]) for col in causalities.columns]
+    betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(causalities.columns, optimal_lags)
+    betas_by_freq.append(betas)
+    intercept_by_freq.append(intercept)
+    optimal_lags_by_freq.append(optimal_lags)
