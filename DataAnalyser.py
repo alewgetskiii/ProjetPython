@@ -127,9 +127,18 @@ class DataAnalyser:
     
         # Trier les résultats par p_value (croissant)
         sorted_results = sorted(results, key=lambda x: x[2])
+        seen_first_values = set()
+
+        # Parcours des triplets
+        unique_results = []
+        for triplet in sorted_results:
+            first_value = triplet[0]
+            if first_value not in seen_first_values:
+                unique_results.append(triplet)
+                seen_first_values.add(first_value)
     
         # Retourner uniquement les 5 meilleures p-values
-        return sorted_results[:5]
+        return unique_results[:5]
 
     def RandomForest(self, X_daily, X_annual):
         valid_columns = [col for col in X_daily + X_annual if col in self._returns.columns]
