@@ -70,10 +70,10 @@ print(causalities)
 
 
 ''' Regression multiple from result causalities'''
-optimal_lags = [int(causalities[col].idxmin()[-1]) for col in causalities.columns]
-beta, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(causalities.columns, optimal_lags)
+'''optimal_lags = [int(causalities[col].idxmin()[-1]) for col in causalities.columns]
+beta, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(causalities.columns, optimal_lags, displayPred=False)
 print(score)
-
+'''
 #dataAnalyser.RandomForest(annual_variables, daily_variables)
 
 ''' On fait une regression linéaire multiple sur chaque frequence SEPAREMMENT: annuelle, mensuelle, weekkly, daily
@@ -86,9 +86,11 @@ betas_by_freq = []
 intercept_by_freq = []
 optimal_lags_by_freq = []
 for variables in variables_by_freq:
-    causalities = dataAnalyser.causal(variables, max_lag=5, filter_p_value=0.20)
+    causalities = dataAnalyser.causal(variables, max_lag=5, filter_p_value=0.05)
     optimal_lags = [int(causalities[col].idxmin()[-1]) for col in causalities.columns]
-    betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(causalities.columns, optimal_lags)
-    betas_by_freq.append(betas)
-    intercept_by_freq.append(intercept)
-    optimal_lags_by_freq.append(optimal_lags)
+    if optimal_lags != []:
+        betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(causalities.columns, optimal_lags, split_year='2012', displayPred=True)
+        betas_by_freq.append(betas)
+        intercept_by_freq.append(intercept)
+        optimal_lags_by_freq.append(optimal_lags)
+        print(score)
