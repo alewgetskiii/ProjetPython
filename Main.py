@@ -63,7 +63,7 @@ print(annual_correl)
 
 
 '''Causalites'''
-causalities = dataAnalyser.causal(annual_variables, max_lag=5, p_value_limit=0.05)
+causalities = dataAnalyser.causal(annual_variables, max_lag=6, p_value_limit=0.10)
 print(causalities)
 
 
