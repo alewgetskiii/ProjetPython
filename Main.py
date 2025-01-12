@@ -109,7 +109,7 @@ print('r²: '+str(score))
 print('r² adj: '+str(score_adj))
 
 VIF_df = dataAnalyser.getMultiColinearity(variables_selected, lags, split_date[:4])
-''' on enleve les variables avec un VIF > 10'''
+on enleve les variables avec un VIF > 10
 variables_selected = [var[:-6] for var in VIF_df[VIF_df['VIF']<10]['Variable']]
 lags = [int(var[-1]) for var in VIF_df[VIF_df['VIF']<10]['Variable']]
 betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=variables_selected, lags=lags, split_year=split_date[:4], displayPred=True)
