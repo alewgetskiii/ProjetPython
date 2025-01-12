@@ -54,11 +54,11 @@ for var in daily_variables:
 annual_variables = annual_variables + daily_variables
 
 ''' On split les donnees '''
-split_date = '2012-12-31'
+split_date = '2010-12-31'
 
 
-annual_correl = dataAnalyser.getCorrelationByFrequency(annual_variables, range_lag=5, 
-                                                       top_best=5, split_date=split_date)
+annual_correl = dataAnalyser.getCorrelationByFrequency(annual_variables, range_lag=6, 
+                                                       top_best=10, split_date=split_date)
 print(annual_correl)
 
 
@@ -71,22 +71,50 @@ print(causalities)
 '''based on causalites'''
 variables_selected = []
 lags = []
-for col, lag, p_value in causalities[:3]:
+for col, lag, p_value, _ in causalities[:10]:
     variables_selected.append(col)
     lags.append(lag)
 
-betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=variables_selected, lags=lags, split_year='2010', displayPred=True)
+betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=variables_selected, lags=lags, split_year=split_date[:4], displayPred=True)
+print('selected variables : ' +str(variables_selected))
+print('lags : ' +str(lags))
+print('r²: '+str(score))
+print('r² adj: '+str(score_adj))
+''' On voit que notre modèle surreagit les baisses
+cela est surement du a un probleme de colinearite de nos variables '''
+
+VIF_df = dataAnalyser.getMultiColinearity(variables_selected, lags, split_date[:4])
+''' on enleve les variables avec un VIF > 10'''
+variables_selected = [var[:-6] for var in VIF_df[VIF_df['VIF']<10]['Variable']]
+lags = [int(var[-1]) for var in VIF_df[VIF_df['VIF']<10]['Variable']]
+betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=variables_selected, lags=lags, split_year=split_date[:4], displayPred=True)
+print('selected variables : ' +str(variables_selected))
+print('lags : ' +str(lags))
 print('r²: '+str(score))
 print('r² adj: '+str(score_adj))
 
+
 '''based on correlations'''
-variables_selected = []
+
+'''variables_selected = []
 lags = []
 for varAndLag, _ in annual_correl.items():
     variables_selected.append(varAndLag[:-6])
     lags.append(int(varAndLag[-1]))
 
-betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=variables_selected, lags=lags, split_year='2010', displayPred=True)
+betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=variables_selected, lags=lags, split_year=split_date[:4], displayPred=True)
+print('selected variables : ' +str(variables_selected))
+print('lags : ' +str(lags))
 print('r²: '+str(score))
 print('r² adj: '+str(score_adj))
 
+VIF_df = dataAnalyser.getMultiColinearity(variables_selected, lags, split_date[:4])
+''' on enleve les variables avec un VIF > 10'''
+variables_selected = [var[:-6] for var in VIF_df[VIF_df['VIF']<10]['Variable']]
+lags = [int(var[-1]) for var in VIF_df[VIF_df['VIF']<10]['Variable']]
+betas, intercept, score, score_adj = dataAnalyser.linearRegWithLagsByFrequency(variables=variables_selected, lags=lags, split_year=split_date[:4], displayPred=True)
+print('selected variables : ' +str(variables_selected))
+print('lags : ' +str(lags))
+print('r²: '+str(score))
+print('r² adj: '+str(score_adj))
+'''

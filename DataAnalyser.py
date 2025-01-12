@@ -1,5 +1,4 @@
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score  
 from sklearn.model_selection import GridSearchCV, train_test_split
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
@@ -9,6 +8,8 @@ import pandas as pd
 from statsmodels.tsa.stattools import grangercausalitytests
 import warnings
 from sklearn.linear_model import Ridge
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -209,7 +210,32 @@ class DataAnalyser:
             results[key] = self.linearRegCoef(sub_variables, True, False)
         return list(sorted(results.items(), key=lambda x:x[1][-1], reverse=True))[:top_best]
 
-    
+    def getMultiColinearity(self, variables, lags, split_year):
+        ''' Based on VIF '''
+        max_lag = max(lags)
+        x = []
+        for i in range(len(variables)):
+            if lags[i] == 0:
+                x.append(list(self.getColReturns(variables[i])[self.getColReturns(variables[i]).index >= '1991-12-31'][max_lag-lags[i]:]))
+            else:
+                x.append(list(self.getColReturns(variables[i])[self.getColReturns(variables[i]).index >= '1991-12-31'][max_lag-lags[i]:-lags[i]]))
+        x = list(zip(*x))
+        x = np.array([list(obs) for obs in x])
+
+        return_coffee = self.getAnnualCoffeeReturn()[max_lag:]
+        X = sm.add_constant(x)
+
+        'Split train and test'
+        X_train, X_test, y_train, y_test = self.split_year(X, return_coffee, year=split_year)
+
+        # Calculer le VIF pour chaque variable
+        X_train_df = pd.DataFrame(X_train, columns=['constant']+[variables[i] +' lag '+str(lags[i]) for i in range(len(variables))])
+        vif = pd.DataFrame()
+        vif["Variable"] = X_train_df.columns
+        vif["VIF"] = [variance_inflation_factor(X_train_df.values, i) for i in range(X_train_df.shape[1])]
+        vif.set_index('Variable')
+        return vif[1:] #on ne prend pas en compte la constante
+
     def getColValue(self, col):
         return self._data[self._data[col].notna()][col]
 
